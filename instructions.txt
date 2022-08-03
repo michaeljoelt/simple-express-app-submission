@@ -22,12 +22,12 @@ git push -u origin main
 /* heroku setup */
 npm install -g heroku
 heroku login 
-heroku create tea-api-herokutest (needs to be unique; this example would create https://tea-api-herokutest.herokuapp.com/)
+heroku create airfry-api (needs to be unique; this example would create https://airfry-api.herokuapp.com/)
 -> create file Procfile and put "web: node server.js"(no quotes) on top line so heroku knows how to start
 git add .
 git commit -m "added procfile for heroku"
 git push heroku main
--> go to created site (for example: https://tea-api-herokutest.herokuapp.com/)
+-> go to created site (for example: https://airfry-api.herokuapp.com/)
 
 
 
