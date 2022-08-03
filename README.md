@@ -1,6 +1,3 @@
-# airfry
-basic api set up for heroku
-
 #100Devs Simple Express App Submission
 
 Goal: Make Your Own CRUD APP and Push To Heroku
@@ -19,3 +16,12 @@ Example:
 I completed the challenge: 5
 I feel good about my code: 4
 I'm not sure if my constructors are setup cleanly...
+
+
+
+
+
+Working through: https://zellwk.com/blog/crud-express-mongodb/
+Current Section: "Accepting the PUT request"
+
+https://fullstackopen.com/en/part3/node_js_and_express

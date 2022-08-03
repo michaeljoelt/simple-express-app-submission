@@ -1,142 +1,58 @@
-const express = require('express')
-const app = express()
-const cors = require('cors') //allows requests from external clients
-app.use(cors())
-const PORT = 8000
+const express = require("express");
+const app = express();
+const PORT = 2121 //assigning a port for our server to communicate through
+require('dotenv').config() //use node module dotenv which allows you to load in environment variable that yo uset up in a .env file: https://www.npmjs.com/package/dotenv
+app.set('view engine', 'ejs')
 
-/*
-for handling query strings
-using insteadhttps://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
-*/
-// const url = require('url');
-// const querystring = require('querystring');
+const dbConnectionStr = process.env.DB_STRING // Parse .env config file  --> returns object based on parsed keys/values 
+const dbName = 'affirmations'
 
-const food = {
-    "chicken": {
-        "internalTempF": 140,
-        "types": {
-            "full": {
-                "size": "small",
-                "count": 1,
-                "cookTempF": 180,
-                "cookTimeMinutes": 20,
-                "notes": ""
-            },
-            "breast": {
-                "size": "medium",
-                "count": 4,
-                "cookTempF": 180,
-                "cookTimeMinutes": 12,
-                "notes": ""
-            }
-        },
-    },
-    "pork": {
-        "internalTempF": 140,
-        "types": {
-            "bacon": {
-                "size": "medium",
-                "count": 6,
-                "cookTempF": 180,
-                "cookTimeMinutes": 12
-            },
-            "belly": {
-                "size": "small",
-                "count": 1,
-                "cookTempF": 180,
-                "cookTimeMinutes": 20
-            }
-        },
-        "beef": {
-            "internalTempF": 140,
-            "types": {
-                "breast": {
-                    "size": "medium",
-                    "count": 4,
-                    "cookTempF": 180,
-                    "cookTimeMinutes": 12
-                },
-                "full": {
-                    "size": "small",
-                    "count": 1,
-                    "cookTempF": 180,
-                    "cookTimeMinutes": 20
-                }
-            },
-        },
-        "unknown": {
-            "internalTempF": 0,
-            "types": {
-                "unknown": {
-                    "size": "unknown",
-                    "count": 0,
-                    "cookTempF": 0,
-                    "cookTimeMinutes": 0
-                }
-            },
-        }
-    }
-}
+const MongoClient = require('mongodb').MongoClient
 
-app.get("/", (request, response) => {
-    console.log("sending you to index.html")
-    response.sendFile(`${__dirname}/index.html`)
+
+MongoClient.connect(dbConnectionStr, (err, client) => {
+    if (err) return console.error(err)
+    console.log('Connected to Database')
+    const db = client.db(dbName)
+    const transCollection = db.collection('trans')
+
+    app.use(express.json());
+    app.use(express.urlencoded({
+        extended: true
+    })); // middleware that extracts data from the <form> element and add them to the body property in the request object.
+    app.use(express.static('public')) //tells Express to make this folder accessible to the public by using express.static middleware
+
+    app.get('/', (req, res) => {
+        db.collection('trans').find().toArray()
+            .then(results => {
+                console.log(results)
+                res.render('index.ejs', {
+                    quotes: results
+                })
+            })
+            .catch(error => console.error(error))
+
+
+        // res.sendFile(__dirname + '/index.html') // __dirname is the current directory you're in
+    })
+
+    app.post('/quotes', (req, res) => {
+        transCollection.insertOne(req.body)
+            .then(result => {
+                console.log(result)
+                res.redirect('/') //send user back home
+            })
+            .catch(error => console.error(error))
+    })
+
+    app.put('/quotes', (req, res) => {
+        console.log(req.body)
+    })
+
+    /*
+        Have server listen on port set in the PORT variable
+    */
+    app.listen(process.env.PORT || PORT, () => {
+        console.log(`Server running on port ${PORT}: http://localhost:${PORT}`)
+    })
 })
-
-app.get("/api/:category/:type", (request, response) => {
-    const category = (request.params.category).toLowerCase()
-    const type = (request.params.type).toLowerCase()
-    console.log(`searching for Category: ${category}, Type: ${type}`)
-
-    //testing
-    // jsonString = JSON.stringify(food, null, 2)
-    // console.log(`searching trhough: ${jsonString}`)
-
-
-    if (food[category].types[type]) {
-        response.json(food[category].types[type])
-        console.log(food[category].types[type])
-    } else {
-        response.json(food['unknown'].types['unknown'])
-        console.log(food['unknown'].types['unknown'])
-    }
-})
-
-app.get("/lookup", (request, response) => {
-    // let rawUrl = request.originalUrl;
-    // const url = request.originalUrl
-    // const searchParams = new URLSearchParams(url);
-    // const category = searchParams.get("category")
-    // const type = searchParams.get("type")
-    const category = request.query.category
-    const type = request.query.type
-    console.log(`Found queries: ${category} and ${type}`)
-    // console.log(request)
-
-    // const category = (request.params.category).toLowerCase()
-    // const type = (request.params.type).toLowerCase()
-    // console.log(`searching for Category: ${category}, Type: ${type}`)
-
-    //testing
-    // jsonString = JSON.stringify(food, null, 2)
-    // console.log(`searching trhough: ${jsonString}`)
-
-    if (food[category].types[type]) {
-        response.json(food[category].types[type])
-        console.log(food[category].types[type])
-    } else {
-        response.json(food['unknown'].types['unknown'])
-        console.log(food['unknown'].types['unknown'])
-    }
-})
-
-app.get("/api", (request, response) => {
-    response.json(food)
-})
-
-app.listen(process.env.PORT || PORT, () => { //process.env.PORT allows you to use heroku's port number
-    console.log(`listening on port ${PORT}`)
-    console.log(`search api using pattern: /api/chicken/breast (replace with category/type, like api/pork/bacon)`)
-})
-
-// if getting error that 8000 is used: npx kill-port 8000
